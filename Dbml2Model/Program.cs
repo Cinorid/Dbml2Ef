@@ -1,5 +1,6 @@
 ﻿using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
+using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
@@ -10,31 +11,47 @@ class Program
 {
 	static async Task<int> Main(string[] args)
 	{
-		var inFile = new Option<FileInfo?>(
-			new []{"--file", "-i"},
-			"DBML file");
+		var inDbmlFile = new Option<FileInfo?>(
+			new []{"--dbml", "-d"},
+			"dbml input file");
 
-		var outPath = new Option<string>(
-			new []{"--outDir", "-o"},
+		var outfolder = new Option<string>(
+			new []{"--outfolder", "-o"},
 			"Output models path");
+		
+		var outNamespace = new Option<string>(
+			new []{"--namespace", "-n"},
+			"Namespace of generated code (default: no namespace).");
+		
+		var outContext = new Option<string>(
+			new []{"--context", "-c"},
+			"Name of data context class (default: derived from database name).");
+		
+		var outEntitybase = new Option<string>(
+			new []{"--entitybase", "-e"},
+			"Base class of entity classes in the generated code (default: entities have no base class).");
 
 		var rootCommand = new RootCommand("Convert Visual Studio .DBML(xml) to pure C# models.");
-		rootCommand.AddOption(inFile);
-		rootCommand.AddOption(outPath);
+		rootCommand.AddOption(inDbmlFile);
+		rootCommand.AddOption(outfolder);
+		rootCommand.AddOption(outNamespace);
+		rootCommand.AddOption(outContext);
+		rootCommand.AddOption(outEntitybase);
 
-		// rootCommand.Handler = CommandHandler.Create<FileInfo, string>(ShowOutput);
-		
-		rootCommand.SetHandler((file, outputPath) =>
-			{
-				ShowOutput(file!, outputPath);
-			},
-			inFile,
-			outPath);
+		// rootCommand.Handler = CommandHandler.Create<FileInfo, string, string, string, string>(DoConvert);
+
+		rootCommand.SetHandler(
+			DoConvert,
+			inDbmlFile,
+			outfolder,
+			outNamespace,
+			outContext,
+			outEntitybase);
 
 		return await rootCommand.InvokeAsync(args);
 	}
-	
-	static void ShowOutput(FileInfo dbmlFile, string outPath="")
+
+	static void DoConvert(FileInfo? dbmlFile, string outPath, string namespaceName, string context, string entitybase)
 	{
 		string fileContent;
 		try
@@ -46,7 +63,7 @@ class Program
 			Console.WriteLine(e.Message);
 			return;
 		}
-		
+
 		if (string.IsNullOrEmpty(outPath))
 		{
 			outPath = System.Environment.CurrentDirectory;
@@ -55,6 +72,50 @@ class Program
 		XElement content = XElement.Parse(fileContent);
 
 		var dbModelDatabase = ConvertXElementToDatabase(content);
+
+		foreach (var table in dbModelDatabase.Tables)
+		{
+			var fileName = table.Name + ".cs";
+			Console.WriteLine($"Generating {fileName}");
+			
+			var strBuilder = new StringBuilder();
+			strBuilder.AppendLine("using System;");
+			strBuilder.AppendLine("");
+			var namespaceIndentation = "";
+			if (!string.IsNullOrEmpty(namespaceName))
+			{
+				namespaceIndentation = "    ";
+				strBuilder.AppendLine($"namespace +{namespaceName}");
+				strBuilder.AppendLine("");
+				strBuilder.AppendLine("{");
+			}
+
+			strBuilder.AppendLine($"{namespaceIndentation}public partial class {table.Type}");
+			strBuilder.AppendLine($"{namespaceIndentation}{{");
+
+			foreach (var column in table.Columns)
+			{
+				strBuilder.AppendLine($"{namespaceIndentation}    public {column.Type} {column.Name} {{ get; set; }}");
+			}
+
+			strBuilder.AppendLine($"{namespaceIndentation}}}");
+
+			if (!string.IsNullOrEmpty(namespaceName))
+			{
+				strBuilder.AppendLine("}");
+			}
+
+			if (!Directory.Exists(outPath))
+			{
+				Directory.CreateDirectory(outPath);
+			}
+
+			var outFilePath = Path.Combine(outPath, fileName);
+			File.WriteAllText(outFilePath, strBuilder.ToString());
+			
+		}
+		
+		Console.WriteLine($"{dbModelDatabase.Tables.Count} models Created.");
 	}
 
 	private static DBML.Database ConvertXElementToDatabase(XElement content)
