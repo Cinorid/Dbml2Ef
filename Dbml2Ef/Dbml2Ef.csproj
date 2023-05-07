@@ -20,7 +20,7 @@
     <Summary>Visual Studio DBML (xml) file to Entity Framework models converter</Summary>
     <PackageDescription>Convert Visual Studio DBML (xml) file to Entity Framework models.</PackageDescription>
     <Copyright>Copyright © 2023 Cinorid (AhmadReza Saghari)</Copyright>
-    <PackageProjectUrl>https://github.com/Cinorid/Dbml2Model</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/Cinorid/Dbml2Ef</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <NeutralLanguage>en-US</NeutralLanguage>
