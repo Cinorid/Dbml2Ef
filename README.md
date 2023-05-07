@@ -1,7 +1,7 @@
-<h1>dbml2ef</h1>
-<p>Convert Visual Studio DBML (xml) file to Entity Framework models.</p>
+# dbml2ef
+Convert Visual Studio DBML (xml) file to Entity Framework models.
 
-<code>dotnet tool install -g Cinorid.dbml2ef</code>
+``` dotnet tool install -g Cinorid.dbml2ef ```
 
 and then use it:
 
