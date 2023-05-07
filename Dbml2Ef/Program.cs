@@ -1,4 +1,5 @@
 ﻿using System.CommandLine;
+using System.CommandLine.Help;
 using System.Text;
 using System.Xml.Linq;
 using Dbml2Ef.DBML;
@@ -11,25 +12,45 @@ class Program
 	{
 		var inDbmlFile = new Option<FileInfo?>(
 			new []{"--dbml", "-d"},
-			"dbml input file");
+			"dbml input file")
+		{
+			IsRequired = true,
+			ArgumentHelpName = "file.dbml"
+		};
 
 		var outfolder = new Option<string>(
 			new []{"--outfolder", "-o"},
-			"Output models path");
+			"Output models path")
+		{
+			ArgumentHelpName = "MyFolder"
+		};
 		
 		var outNamespace = new Option<string>(
 			new []{"--namespace", "-n"},
-			"Namespace of generated code (default: no namespace).");
+			"Namespace of generated code (default: no namespace).")
+		{
+			ArgumentHelpName = "MyNamespace"
+		};
 		
 		var outContext = new Option<string>(
 			new []{"--context", "-c"},
-			"Name of data context class (default: derived from database name).");
+			"Name of data context class (default: derived from database name).")
+		{
+			ArgumentHelpName = "MyDbContext",
+		};
 		
 		var outEntitybase = new Option<string>(
 			new []{"--entitybase", "-e"},
-			"Base class of entity classes in the generated code (default: entities have no base class).");
+			"Base class of entity classes in the generated code (default: entities have no base class).")
+		{
+			ArgumentHelpName = "MyBaseClass"
+		};
 
-		var rootCommand = new RootCommand("Convert Visual Studio .DBML(xml) to pure C# models.");
+		var rootCommand = new RootCommand()
+		{
+			Name = "dbml2ef",
+			Description = "Convert linq2sql or Visual Studio DBML file to Entity Framework models.",
+		};
 		rootCommand.AddOption(inDbmlFile);
 		rootCommand.AddOption(outfolder);
 		rootCommand.AddOption(outNamespace);
