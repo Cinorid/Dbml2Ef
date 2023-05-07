@@ -1,5 +1,5 @@
 # dbml2ef
-Convert Visual Studio DBML (xml) file to Entity Framework models.
+Convert Visual Studio DBML (xml) or linq2sql file to Entity Framework models.
 
 ``` dotnet tool install -g Cinorid.dbml2ef ```
 
@@ -7,7 +7,7 @@ and then use it:
 
 ```
 Description:
-  Convert Visual Studio .DBML(xml) to pure C# models.
+  Convert Visual Studio .DBML(xml) to Entity Framework models.
 
 Usage:
   dbml2ef [options]
