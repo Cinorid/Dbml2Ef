@@ -193,11 +193,11 @@ class Program
 		strBuilder.AppendLine($"{namespaceIndentation}public partial class {contextName} : DbContext");
 		strBuilder.AppendLine($"{namespaceIndentation}{{"); // begin class
 
-		strBuilder.AppendLine($"{namespaceIndentation}    public HematoCountContext()");
+		strBuilder.AppendLine($"{namespaceIndentation}    public {contextName}()");
 		strBuilder.AppendLine($"{namespaceIndentation}    {{");
 		strBuilder.AppendLine($"{namespaceIndentation}    }}");
 		strBuilder.AppendLine($"{namespaceIndentation}    ");
-		strBuilder.AppendLine($"{namespaceIndentation}    public HematoCountContext(DbContextOptions<HematoCountContext> options)");
+		strBuilder.AppendLine($"{namespaceIndentation}    public {contextName}(DbContextOptions<{contextName}> options)");
 		strBuilder.AppendLine($"{namespaceIndentation}        : base(options)");
 		strBuilder.AppendLine($"{namespaceIndentation}    {{");
 		strBuilder.AppendLine($"{namespaceIndentation}    }}");
