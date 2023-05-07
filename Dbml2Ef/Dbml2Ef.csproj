@@ -7,12 +7,33 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <PackAsTool>true</PackAsTool>
-    <Version>0.1.0</Version>
     <AssemblyVersion>0.1.0</AssemblyVersion>
     <AssemblyName>dbml2ef</AssemblyName>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <Title>Cinorid.dbml2ef</Title>
+    <PackageId>Cinorid.dbml2ef</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Cinorid (AhmadReza Saghari)</Authors>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Summary>Visual Studio DBML (xml) file to Entity Framework models converter</Summary>
+    <PackageDescription>Convert Visual Studio DBML (xml) file to Entity Framework models.</PackageDescription>
+    <Copyright>Copyright © 2023 Cinorid (AhmadReza Saghari)</Copyright>
+    <PackageProjectUrl>https://github.com/Cinorid/Dbml2Model</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <PackageIcon>packageIcon.png</PackageIcon>
+    <PackageIconFullPath>$(MSBuildThisFileDirectory)packageIcon.png</PackageIconFullPath>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+  
   <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="README.md" />
+    <None Include="..\LICENSE.md" Pack="true" PackagePath="LICENSE.md" />
+    <None Include="$(PackageIconFullPath)" Pack="true" PackagePath="\" />
     <PackageReference Include="System.CommandLine.DragonFruit" Version="0.4.0-alpha.22272.1" />
   </ItemGroup>
 
