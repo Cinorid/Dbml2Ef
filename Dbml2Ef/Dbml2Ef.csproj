@@ -9,6 +9,7 @@
     <PackAsTool>true</PackAsTool>
     <Version>0.1.0</Version>
     <AssemblyVersion>0.1.0</AssemblyVersion>
+    <AssemblyName>dbml2ef</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
