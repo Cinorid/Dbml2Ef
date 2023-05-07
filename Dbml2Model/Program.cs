@@ -1,9 +1,7 @@
 ﻿using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 using System.Text;
-using System.Xml;
 using System.Xml.Linq;
-using System.Xml.Serialization;
+using Dbml2Model.DBML;
 
 namespace Dbml2Model;
 
@@ -51,12 +49,12 @@ class Program
 		return await rootCommand.InvokeAsync(args);
 	}
 
-	static void DoConvert(FileInfo? dbmlFile, string outPath, string namespaceName, string context, string entitybase)
+	static void DoConvert(FileInfo? dbmlFile, string outPath, string namespaceName, string contextName, string entityBase)
 	{
-		string fileContent;
+		string? fileContent;
 		try
 		{
-			fileContent = dbmlFile.OpenText().ReadToEnd();
+			fileContent = dbmlFile?.OpenText().ReadToEnd();
 		}
 		catch (Exception e)
 		{
@@ -69,40 +67,73 @@ class Program
 			outPath = System.Environment.CurrentDirectory;
 		}
 
+		if (fileContent is null)
+			return;
+		
 		XElement content = XElement.Parse(fileContent);
 
 		var dbModelDatabase = ConvertXElementToDatabase(content);
 
+		GenerateModelClass(dbModelDatabase, namespaceName, outPath, entityBase);
+		GenerateDataContextClass(dbModelDatabase, namespaceName, outPath, contextName);
+		
+		Console.WriteLine($"{dbModelDatabase.Tables.Count} models Created.");
+	}
+
+	private static void GenerateModelClass(Database dbModelDatabase, string namespaceName, string outPath, string entityBase)
+	{
 		foreach (var table in dbModelDatabase.Tables)
 		{
 			var fileName = table.Name + ".cs";
 			Console.WriteLine($"Generating {fileName}");
-			
+
 			var strBuilder = new StringBuilder();
 			strBuilder.AppendLine("using System;");
+			strBuilder.AppendLine("using System.Collections.Generic;");
 			strBuilder.AppendLine("");
 			var namespaceIndentation = "";
 			if (!string.IsNullOrEmpty(namespaceName))
 			{
 				namespaceIndentation = "    ";
-				strBuilder.AppendLine($"namespace +{namespaceName}");
-				strBuilder.AppendLine("");
-				strBuilder.AppendLine("{");
+				strBuilder.AppendLine($"namespace {namespaceName}");
+				strBuilder.AppendLine("{"); // begin namespace
 			}
 
-			strBuilder.AppendLine($"{namespaceIndentation}public partial class {table.Type}");
-			strBuilder.AppendLine($"{namespaceIndentation}{{");
+			strBuilder.AppendLine($"{namespaceIndentation}public partial class {table.Type}{(!string.IsNullOrEmpty(entityBase) ? " : " + entityBase : "")}");
+			strBuilder.AppendLine($"{namespaceIndentation}{{"); // begin class
 
 			foreach (var column in table.Columns)
 			{
-				strBuilder.AppendLine($"{namespaceIndentation}    public {column.Type} {column.Name} {{ get; set; }}");
+				strBuilder.AppendLine($"{namespaceIndentation}    {ColumnToString(column)}");
+				strBuilder.AppendLine("");
 			}
 
-			strBuilder.AppendLine($"{namespaceIndentation}}}");
+			foreach (var association in table.Associations)
+			{
+				if (association.IsForeignKey)
+				{
+					strBuilder.AppendLine($"{namespaceIndentation}    public virtual {association.Type} {association.Member} {{ get; set; }} = null!;");
+				}
+				else
+				{
+					strBuilder.AppendLine($"{namespaceIndentation}    public virtual ICollection<{association.Type}> {association.Member} {{ get; set; }} = new List<{association.Type}>();");
+				}
+
+				strBuilder.AppendLine("");
+			}
+
+			// remove last empty line
+			var last = strBuilder.ToString().LastIndexOf(Environment.NewLine, StringComparison.Ordinal);
+			if (last >= 0)
+			{
+				strBuilder.Remove(last, strBuilder.Length - last);
+			}
+
+			strBuilder.AppendLine($"{namespaceIndentation}}}"); // end class
 
 			if (!string.IsNullOrEmpty(namespaceName))
 			{
-				strBuilder.AppendLine("}");
+				strBuilder.AppendLine("}"); // end namespace
 			}
 
 			if (!Directory.Exists(outPath))
@@ -112,10 +143,72 @@ class Program
 
 			var outFilePath = Path.Combine(outPath, fileName);
 			File.WriteAllText(outFilePath, strBuilder.ToString());
-			
+		}
+	}
+
+	private static void GenerateDataContextClass(Database dbModelDatabase, string namespaceName, string outPath, string? contextName)
+	{
+		if (string.IsNullOrEmpty(contextName))
+		{
+			contextName = dbModelDatabase.Class;
 		}
 		
-		Console.WriteLine($"{dbModelDatabase.Tables.Count} models Created.");
+		var fileName = contextName + ".cs";
+		Console.WriteLine($"Generating {fileName}");
+
+		var strBuilder = new StringBuilder();
+		strBuilder.AppendLine("using System;");
+		strBuilder.AppendLine("using System.Collections.Generic;");
+		strBuilder.AppendLine("using Microsoft.EntityFrameworkCore;");
+		strBuilder.AppendLine("");
+		var namespaceIndentation = "";
+		if (!string.IsNullOrEmpty(namespaceName))
+		{
+			namespaceIndentation = "    ";
+			strBuilder.AppendLine($"namespace {namespaceName}");
+			strBuilder.AppendLine("{"); // begin namespace
+		}
+
+		strBuilder.AppendLine($"{namespaceIndentation}public partial class {contextName} : DbContext");
+		strBuilder.AppendLine($"{namespaceIndentation}{{"); // begin class
+
+		strBuilder.AppendLine($"{namespaceIndentation}    public HematoCountContext()");
+		strBuilder.AppendLine($"{namespaceIndentation}    {{");
+		strBuilder.AppendLine($"{namespaceIndentation}    }}");
+		strBuilder.AppendLine($"{namespaceIndentation}    ");
+		strBuilder.AppendLine($"{namespaceIndentation}    public HematoCountContext(DbContextOptions<HematoCountContext> options)");
+		strBuilder.AppendLine($"{namespaceIndentation}        : base(options)");
+		strBuilder.AppendLine($"{namespaceIndentation}    {{");
+		strBuilder.AppendLine($"{namespaceIndentation}    }}");
+		strBuilder.AppendLine($"{namespaceIndentation}    ");
+
+		foreach (var table in dbModelDatabase.Tables)
+		{
+			strBuilder.AppendLine($"{namespaceIndentation}    public virtual DbSet<{table.Type}> {table.Name} {{ get; set; }}");
+			strBuilder.AppendLine("");
+		}
+
+		// remove last empty line
+		var last = strBuilder.ToString().LastIndexOf(Environment.NewLine, StringComparison.Ordinal);
+		if (last >= 0)
+		{
+			strBuilder.Remove(last, strBuilder.Length - last);
+		}
+
+		strBuilder.AppendLine($"{namespaceIndentation}}}"); // end class
+
+		if (!string.IsNullOrEmpty(namespaceName))
+		{
+			strBuilder.AppendLine("}"); // end namespace
+		}
+
+		if (!Directory.Exists(outPath))
+		{
+			Directory.CreateDirectory(outPath);
+		}
+
+		var outFilePath = Path.Combine(outPath, fileName);
+		File.WriteAllText(outFilePath, strBuilder.ToString());
 	}
 
 	private static DBML.Database ConvertXElementToDatabase(XElement content)
@@ -123,11 +216,14 @@ class Program
 		if (content.Name.LocalName == "Database")
 		{
 			var db = new DBML.Database();
-			db.Class = content?.Attribute("Class")?.Value;
-			db.BaseType = content?.Attribute("BaseType")?.Value;
+			db.Class = content.Attribute("Class")?.Value;
+			db.BaseType = content.Attribute("BaseType")?.Value;
 
 			db.Tables = new List<DBML.Table>();
 			var tableElements = content?.Elements().ToList();
+			if (tableElements == null)
+				return db;
+			
 			foreach (var tableElement in tableElements)
 			{
 				var table = new DBML.Table();
@@ -139,32 +235,45 @@ class Program
 				table.Columns = new List<DBML.Column>();
 				table.Associations = new List<DBML.Association>();
 				var columns = typeElement?.Elements().ToList();
-				foreach (var elementColumn in columns)
+				if (columns != null)
 				{
-					var elementName = elementColumn.Name.LocalName;
-					if (elementName == "Column")
+					foreach (var elementColumn in columns)
 					{
-						var column = new DBML.Column();
-						column.Name = elementColumn?.Attribute("Name")?.Value;
-						column.Type = elementColumn?.Attribute("Type")?.Value;
-						column.DbType = elementColumn?.Attribute("DbType")?.Value;
-						column.UpdateCheck = elementColumn?.Attribute("UpdateCheck")?.Value;
-						// column.IsDbGenerated = elementColumn?.Attribute("IsDbGenerated")?.Value;
-						// column.IsPrimaryKey = elementColumn?.Attribute("IsPrimaryKey")?.Value;
+						var elementName = elementColumn.Name.LocalName;
+						if (elementName == "Column")
+						{
+							var column = new DBML.Column();
+							column.Name = elementColumn?.Attribute("Name")?.Value;
+							column.Type = elementColumn?.Attribute("Type")?.Value;
+							column.DbType = elementColumn?.Attribute("DbType")?.Value;
+							column.UpdateCheck = elementColumn?.Attribute("UpdateCheck")?.Value;
+							column.AutoSync = elementColumn?.Attribute("AutoSync")?.Value;
 
-						table.Columns.Add(column);
-					}
-					else if (elementName == "Association")
-					{
-						var association = new DBML.Association();
-						association.Name = elementColumn?.Attribute("Name")?.Value;
-						association.Type = elementColumn?.Attribute("Type")?.Value;
-						association.ThisKey = elementColumn?.Attribute("ThisKey")?.Value;
-						association.OtherKey = elementColumn?.Attribute("OtherKey")?.Value;
-						association.Member = elementColumn?.Attribute("Member")?.Value;
-						// association.IsForeignKey = elementColumn?.Attribute("IsForeignKey")?.Value;
+							var canBeNull = elementColumn?.Attribute("CanBeNull")?.Value;
+							column.CanBeNull = Convert.ToBoolean(canBeNull ?? false.ToString());
+							
+							var isDbGenerated = elementColumn?.Attribute("IsDbGenerated")?.Value;
+							column.IsDbGenerated = Convert.ToBoolean(isDbGenerated ?? false.ToString());
+							
+							var isPrimaryKey = elementColumn?.Attribute("IsPrimaryKey")?.Value;
+							column.IsPrimaryKey = Convert.ToBoolean(isPrimaryKey ?? false.ToString());
 
-						table.Associations.Add(association);
+							table.Columns.Add(column);
+						}
+						else if (elementName == "Association")
+						{
+							var association = new DBML.Association();
+							association.Name = elementColumn?.Attribute("Name")?.Value;
+							association.Type = elementColumn?.Attribute("Type")?.Value;
+							association.ThisKey = elementColumn?.Attribute("ThisKey")?.Value;
+							association.OtherKey = elementColumn?.Attribute("OtherKey")?.Value;
+							association.Member = elementColumn?.Attribute("Member")?.Value;
+
+							var isForeignKey = elementColumn?.Attribute("IsForeignKey")?.Value;
+							association.IsForeignKey = Convert.ToBoolean(isForeignKey ?? false.ToString());
+
+							table.Associations.Add(association);
+						}
 					}
 				}
 
@@ -174,6 +283,47 @@ class Program
 			return db;
 		}
 
-		return null;
+		throw new FormatException("file format is not valid.");
+	}
+
+	private static string ColumnToString(DBML.Column column)
+	{
+		string type;
+		string initStr = "";
+		switch (column.Type)
+		{
+			case "System.Int32":
+				type = $"int{(column.CanBeNull ? "?" : "")}";
+				break;
+			case "System.Int64":
+				type = $"long{(column.CanBeNull ? "?" : "")}";
+				break;
+			case "System.Single":
+				type = $"float{(column.CanBeNull ? "?" : "")}";
+				break;
+			case "System.Double":
+				type = $"double{(column.CanBeNull ? "?" : "")}";
+				break;
+			case "System.Byte[]":
+				type = $"byte[]{(column.CanBeNull ? "?" : "")}";
+				break;
+			case "System.DateTime":
+				type = $"DateTime{(column.CanBeNull ? "?" : "")}";
+				break;
+			case "System.Boolean":
+				type = $"bool{(column.CanBeNull ? "?" : "")}";
+				break;
+			case "System.String":
+				type = $"string{(column.CanBeNull ? "?" : "")}";
+				initStr = !column.CanBeNull ? " = null!;" : "";
+				break;
+			default:
+				type = $"{column.Type}{(column.CanBeNull ? "?" : "")}";
+				break;
+		}
+
+		var str = $"public {type} {column.Name} {{ get; set; }}{initStr}";
+
+		return str;
 	}
 }
