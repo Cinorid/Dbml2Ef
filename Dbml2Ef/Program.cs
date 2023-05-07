@@ -1,9 +1,9 @@
 ﻿using System.CommandLine;
 using System.Text;
 using System.Xml.Linq;
-using Dbml2Model.DBML;
+using Dbml2Ef.DBML;
 
-namespace Dbml2Model;
+namespace Dbml2Ef;
 
 class Program
 {

@@ -1,4 +1,4 @@
-namespace Dbml2Model.DBML;
+namespace Dbml2Ef.DBML;
 
 public class Database
 {

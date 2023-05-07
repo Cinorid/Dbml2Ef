@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dbml2Model", "Dbml2Model\Dbml2Model.csproj", "{2D3C28B3-4016-4BE1-B7B0-E381588CE7B3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dbml2Ef", "Dbml2Ef\Dbml2Ef.csproj", "{2D3C28B3-4016-4BE1-B7B0-E381588CE7B3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
