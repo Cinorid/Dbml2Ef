@@ -105,7 +105,7 @@ class Program
 	{
 		foreach (var table in dbModelDatabase.Tables)
 		{
-			var fileName = table.Name + ".cs";
+			var fileName = table.Type + ".cs";
 			Console.WriteLine($"Generating {fileName}");
 
 			var strBuilder = new StringBuilder();

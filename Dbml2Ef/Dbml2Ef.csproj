@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <PackAsTool>true</PackAsTool>
-    <AssemblyVersion>0.1.4</AssemblyVersion>
+    <AssemblyVersion>0.1.5</AssemblyVersion>
     <AssemblyName>dbml2ef</AssemblyName>
     <TargetFrameworks>net5.0;net6.0;netcoreapp3.1</TargetFrameworks>
   </PropertyGroup>
@@ -14,7 +14,7 @@
   <PropertyGroup>
     <Title>Cinorid.dbml2ef</Title>
     <PackageId>Cinorid.dbml2ef</PackageId>
-    <Version>0.1.4</Version>
+    <Version>0.1.5</Version>
     <Authors>Cinorid (AhmadReza Saghari)</Authors>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Summary>linq2sql or Visual Studio DBML file to Entity Framework models converter</Summary>
