@@ -133,11 +133,18 @@ class Program
 			{
 				if (association.IsForeignKey)
 				{
-					strBuilder.AppendLine($"{namespaceIndentation}    public virtual {association.Type} {association.Member} {{ get; set; }} = null!;");
+					strBuilder.AppendLine($"{namespaceIndentation}    public virtual {association.Type} {(association.ThisKey == association.OtherKey ? "IdNavigation" : association.Member)} {{ get; set; }} = null!;");
 				}
 				else
 				{
-					strBuilder.AppendLine($"{namespaceIndentation}    public virtual ICollection<{association.Type}> {association.Member} {{ get; set; }} = new List<{association.Type}>();");
+					if (association.Cardinality == "One")
+					{
+						strBuilder.AppendLine($"{namespaceIndentation}    public virtual {association.Type}? {association.Type} {{ get; set; }}");
+					}
+					else
+					{
+						strBuilder.AppendLine($"{namespaceIndentation}    public virtual ICollection<{association.Type}> {association.Member} {{ get; set; }} = new List<{association.Type}>();");
+					}
 				}
 
 				strBuilder.AppendLine("");
@@ -289,6 +296,7 @@ class Program
 							association.ThisKey = elementColumn?.Attribute("ThisKey")?.Value;
 							association.OtherKey = elementColumn?.Attribute("OtherKey")?.Value;
 							association.Member = elementColumn?.Attribute("Member")?.Value;
+							association.Cardinality = elementColumn?.Attribute("Cardinality")?.Value;
 
 							var isForeignKey = elementColumn?.Attribute("IsForeignKey")?.Value;
 							association.IsForeignKey = Convert.ToBoolean(isForeignKey ?? false.ToString());

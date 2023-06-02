@@ -8,6 +8,7 @@ public class Association
 	public string? Member { get; set; }
 	public string? ThisKey { get; set; }
 	public string? OtherKey { get; set; }
+	public string? Cardinality { get; set; }
 	
 	public override string ToString()
 	{

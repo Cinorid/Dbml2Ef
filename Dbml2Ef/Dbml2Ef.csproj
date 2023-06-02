@@ -8,7 +8,7 @@
     <PackAsTool>true</PackAsTool>
     <AssemblyVersion>0.1.5</AssemblyVersion>
     <AssemblyName>dbml2ef</AssemblyName>
-    <TargetFrameworks>net5.0;net6.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net6.0;net5.0;netcoreapp3.1</TargetFrameworks>
   </PropertyGroup>
 
   <PropertyGroup>
